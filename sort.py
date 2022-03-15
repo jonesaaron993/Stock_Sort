@@ -1,19 +1,19 @@
-from asyncio import futures
-import multiprocessing
 import os
-import numpy as np
 import ssl
+import time
+import numpy as np
 import pandas as pd
 import yfinance as yf
 import matplotlib.pyplot as plt
 from multiprocessing.pool import ThreadPool
+from selenium import webdriver
 
 ssl._create_default_https_context = ssl._create_unverified_context
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 # Constents
 
-MIN_VOLUME = 800000
+MIN_VOLUME = 1000000
 Y5_SLOPE = 10
 MAXY_SLOPE = 0
 MAX_TRAILINGPE = 30
@@ -86,7 +86,8 @@ def sortInfo(tickers):
 
             # If the forward PE is lower than the trailing PE, that means the analysts are expecting earnings to increase
             if a > Y5_SLOPE and aMax > MAXY_SLOPE and (trailingPE < MAX_TRAILINGPE and trailingPE > 0) and forwardPE < trailingPE and eps > MIN_EPS and (peg < MAX_PEG and peg > 0) and volume > MIN_VOLUME:
-                output_symbols.append(tick + " TrailingPE: " + str(trailingPE) + " ForwardPE: " + str(forwardPE) + " eps: " + str(eps) + " peg: " + str(peg))
+                #output_symbols.append(tick + " TrailingPE: " + str(trailingPE) + " ForwardPE: " + str(forwardPE) + " eps: " + str(eps) + " peg: " + str(peg))
+                output_symbols.append(tick)
 
             # Plot the data
             #plt.plot(x5, y5)
@@ -151,34 +152,21 @@ return_val_eight = async_result_eight.get()
 return_val_nine = async_result_nine.get()
 return_val_ten = async_result_ten.get()
 
+# Combine the lists into one
+found_tickers = return_val_one + return_val_two + return_val_three + return_val_four + return_val_five + return_val_six + return_val_seven + return_val_eight + return_val_nine + return_val_ten
+
 print("\nFound Stocks Meeting Criteria:")
+browser = webdriver.Firefox(executable_path=r'C:\Users\jones\AppData\Roaming\Python\Python37\geckodriver.exe')
 
-for x in return_val_one:
+tab_count = 1
+for x in found_tickers:
     print(x)
 
-for x in return_val_two:
-    print(x)
-
-for x in return_val_three:
-    print(x)
-
-for x in return_val_four:
-    print(x)
-
-for x in return_val_five:
-    print(x)
-
-for x in return_val_six:
-    print(x)
-
-for x in return_val_seven:
-    print(x)
-
-for x in return_val_eight:
-    print(x)
-
-for x in return_val_nine:
-    print(x)
-
-for x in return_val_ten:
-    print(x)
+    if tab_count == 1:
+        browser.get(r"https://finance.yahoo.com/quote/" + x + "/")
+    else:
+        browser.execute_script("window.open('about:blank', " + "'tab" + str(tab_count) + "');")
+        browser.switch_to.window(browser.window_handles[-1])
+        browser.get(r"https://finance.yahoo.com/quote/" + x + "/")
+    tab_count = tab_count + 1
+    time.sleep(5)
