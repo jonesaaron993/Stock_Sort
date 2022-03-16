@@ -155,18 +155,26 @@ return_val_ten = async_result_ten.get()
 # Combine the lists into one
 found_tickers = return_val_one + return_val_two + return_val_three + return_val_four + return_val_five + return_val_six + return_val_seven + return_val_eight + return_val_nine + return_val_ten
 
-print("\nFound Stocks Meeting Criteria:")
-browser = webdriver.Firefox(executable_path=r'C:\Users\jones\AppData\Roaming\Python\Python37\geckodriver.exe')
+# Start of HTML code
+start_of_html = """
+    <!DOCTYPE html>
+    <html>
+    <body>"""
+hyperlink_collection = ""
 
-tab_count = 1
+print("\nFound Stocks Meeting Criteria:")
 for x in found_tickers:
     print(x)
+    hyperlink = "https://finance.yahoo.com/quote/" + x + "/"
+    hyperlink_collection = hyperlink_collection + "<a href='" + hyperlink + "'>" + x + "</a><br>"
 
-    if tab_count == 1:
-        browser.get(r"https://finance.yahoo.com/quote/" + x + "/")
-    else:
-        browser.execute_script("window.open('about:blank', " + "'tab" + str(tab_count) + "');")
-        browser.switch_to.window(browser.window_handles[-1])
-        browser.get(r"https://finance.yahoo.com/quote/" + x + "/")
-    tab_count = tab_count + 1
-    time.sleep(5)
+end_of_html = """
+    </body>
+    </html>"""
+
+final_message = start_of_html + hyperlink_collection + end_of_html
+
+f = open('helloworld.html','w')
+
+f.write(final_message)
+f.close()
