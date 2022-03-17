@@ -1,18 +1,21 @@
 import os
 import ssl
-import time
+import argparse
 import numpy as np
 import pandas as pd
 import yfinance as yf
 import matplotlib.pyplot as plt
 from multiprocessing.pool import ThreadPool
-from selenium import webdriver
 
 ssl._create_default_https_context = ssl._create_unverified_context
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-# Constents
+parser = argparse.ArgumentParser()
+parser.add_argument('--m', action='store_true', help='Multithread application, does not output graphs')
+parser.add_argument('--o', action='store_true', help='Regular application, outputs graphs')
+args = parser.parse_args()
 
+# Constents
 MIN_VOLUME = 1000000
 Y5_SLOPE = 10
 MAXY_SLOPE = 0
@@ -49,7 +52,7 @@ def dt64_to_float(dt64):
     # print('dt_float:', dt_float)
     return dt_float
 
-def sortInfo(tickers):
+def sortInfo(tickers, generate_graphs):
 
     output_symbols = []
 
@@ -89,92 +92,105 @@ def sortInfo(tickers):
                 #output_symbols.append(tick + " TrailingPE: " + str(trailingPE) + " ForwardPE: " + str(forwardPE) + " eps: " + str(eps) + " peg: " + str(peg))
                 output_symbols.append(tick)
 
-            # Plot the data
-            #plt.plot(x5, y5)
-            #plt.plot(x5, a*x5Format+b)
-            #plt.title("Slope 5Y: " + str(round(a)))
-            #plt.ylabel('Price($)')
-            #plt.xlabel('Date', rotation=0)
-            #plt.savefig(dir_path + r'\\Outputs\\' + tick + '.png')
-            #plt.clf()
+            if generate_graphs == True:
+                # Plot the data
+                plt.plot(x5, y5)
+                plt.plot(x5, a*x5Format+b)
+                plt.title("Slope 5Y: " + str(round(a)))
+                plt.ylabel('Price($)')
+                plt.xlabel('Date', rotation=0)
+                plt.savefig(dir_path + r'\\Outputs\\' + tick + '.png')
+                plt.clf()
         except:
             continue
     
     return output_symbols
 
+def multithread_sort(symbols):
 
-# There are 2 tables on the Wikipedia page
-# we want the first table
-payload = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
-first_table = payload[0]
-second_table = payload[1]
+    # Split the list into equal parts
+    symbol_chunck_one = symbols[0:50]
+    symbol_chunck_two = symbols[50:100]
+    symbol_chunck_three = symbols[100:150]
+    symbol_chunck_four = symbols[150:200]
+    symbol_chunck_five = symbols[200:250]
+    symbol_chunck_six = symbols[250:300]
+    symbol_chunck_seven = symbols[300:350]
+    symbol_chunck_eight = symbols[350:400]
+    symbol_chunck_nine = symbols[400:450]
+    symbol_chunck_ten = symbols[450:505]
 
-df = first_table
-df.head()
+    pool = ThreadPool(processes=10)
 
-# Get all the symbols
-symbols = df['Symbol'].values.tolist()
-final_output = []
+    async_result_one = pool.apply_async(sortInfo, (symbol_chunck_one,False,))
+    async_result_two = pool.apply_async(sortInfo, (symbol_chunck_two,False,))
+    async_result_three = pool.apply_async(sortInfo, (symbol_chunck_three,False,))
+    async_result_four = pool.apply_async(sortInfo, (symbol_chunck_four,False,))
+    async_result_five = pool.apply_async(sortInfo, (symbol_chunck_five,False,))
+    async_result_six = pool.apply_async(sortInfo, (symbol_chunck_six,False,))
+    async_result_seven = pool.apply_async(sortInfo, (symbol_chunck_seven,False,))
+    async_result_eight = pool.apply_async(sortInfo, (symbol_chunck_eight,False,))
+    async_result_nine = pool.apply_async(sortInfo, (symbol_chunck_nine,False,))
+    async_result_ten = pool.apply_async(sortInfo, (symbol_chunck_ten,False,))
 
-# Split the list into equal parts
-symbol_chunck_one = symbols[0:50]
-symbol_chunck_two = symbols[50:100]
-symbol_chunck_three = symbols[100:150]
-symbol_chunck_four = symbols[150:200]
-symbol_chunck_five = symbols[200:250]
-symbol_chunck_six = symbols[250:300]
-symbol_chunck_seven = symbols[300:350]
-symbol_chunck_eight = symbols[350:400]
-symbol_chunck_nine = symbols[400:450]
-symbol_chunck_ten = symbols[450:505]
+    return_val_one = async_result_one.get()
+    return_val_two = async_result_two.get()
+    return_val_three = async_result_three.get()
+    return_val_four = async_result_four.get()
+    return_val_five = async_result_five.get()
+    return_val_six = async_result_six.get()
+    return_val_seven = async_result_seven.get()
+    return_val_eight = async_result_eight.get()
+    return_val_nine = async_result_nine.get()
+    return_val_ten = async_result_ten.get()
 
-pool = ThreadPool(processes=10)
+    # Combine the lists into one
+    found_tickers = return_val_one + return_val_two + return_val_three + return_val_four + return_val_five + return_val_six + return_val_seven + return_val_eight + return_val_nine + return_val_ten
+    
+    return found_tickers
 
-async_result_one = pool.apply_async(sortInfo, (symbol_chunck_one,))
-async_result_two = pool.apply_async(sortInfo, (symbol_chunck_two,))
-async_result_three = pool.apply_async(sortInfo, (symbol_chunck_three,))
-async_result_four = pool.apply_async(sortInfo, (symbol_chunck_four,))
-async_result_five = pool.apply_async(sortInfo, (symbol_chunck_five,))
-async_result_six = pool.apply_async(sortInfo, (symbol_chunck_six,))
-async_result_seven = pool.apply_async(sortInfo, (symbol_chunck_seven,))
-async_result_eight = pool.apply_async(sortInfo, (symbol_chunck_eight,))
-async_result_nine = pool.apply_async(sortInfo, (symbol_chunck_nine,))
-async_result_ten = pool.apply_async(sortInfo, (symbol_chunck_ten,))
+if __name__ == "__main__":
 
-return_val_one = async_result_one.get()
-return_val_two = async_result_two.get()
-return_val_three = async_result_three.get()
-return_val_four = async_result_four.get()
-return_val_five = async_result_five.get()
-return_val_six = async_result_six.get()
-return_val_seven = async_result_seven.get()
-return_val_eight = async_result_eight.get()
-return_val_nine = async_result_nine.get()
-return_val_ten = async_result_ten.get()
+    found_tickers = []
 
-# Combine the lists into one
-found_tickers = return_val_one + return_val_two + return_val_three + return_val_four + return_val_five + return_val_six + return_val_seven + return_val_eight + return_val_nine + return_val_ten
+    # There are 2 tables on the Wikipedia page
+    # we want the first table
+    payload = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
+    first_table = payload[0]
+    second_table = payload[1]
 
-# Start of HTML code
-start_of_html = """
-    <!DOCTYPE html>
-    <html>
-    <body>"""
-hyperlink_collection = ""
+    df = first_table
+    df.head()
 
-print("\nFound Stocks Meeting Criteria:")
-for x in found_tickers:
-    print(x)
-    hyperlink = "https://finance.yahoo.com/quote/" + x + "/"
-    hyperlink_collection = hyperlink_collection + "<a href='" + hyperlink + "'>" + x + "</a><br>"
+    # Get all the symbols
+    symbols = df['Symbol'].values.tolist()
 
-end_of_html = """
-    </body>
-    </html>"""
+    if args.m == True:
+        found_tickers = multithread_sort(symbols)
+    
+    if args.o == True:
+        found_tickers = sortInfo(symbols, True)
+    
+    # Start of HTML code
+    start_of_html = """
+        <!DOCTYPE html>
+        <html>
+        <body>"""
+    hyperlink_collection = ""
 
-final_message = start_of_html + hyperlink_collection + end_of_html
+    print("\nFound Stocks Meeting Criteria:")
+    for x in found_tickers:
+        print(x)
+        hyperlink = "https://finance.yahoo.com/quote/" + x + "/"
+        hyperlink_collection = hyperlink_collection + "<a href='" + hyperlink + "'>" + x + "</a><br>"
 
-f = open('helloworld.html','w')
+    end_of_html = """
+        </body>
+        </html>"""
 
-f.write(final_message)
-f.close()
+    final_message = start_of_html + hyperlink_collection + end_of_html
+
+    f = open('helloworld.html','w')
+
+    f.write(final_message)
+    f.close()
